@@ -1,0 +1,69 @@
+---
+title: "Analysis of FiveThirtyEight 2020 Presidential Model Error Correlations with State Elasticity Scores"
+author: Matthew Ralph
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(fig.width = 8,
+                      fig.asp = 0.618,
+                      fig.retina = 3,
+                      dpi = 300,
+                      out.width = "90%",
+                      fig.align='center')
+
+library(tidyverse)
+
+state_data <- read.csv("~/Documents/R Files/538_error_elasticity/data/state_elastic.csv") %>%
+  mutate(WINNER=ifelse(Wiki_Margin < 0, "BIDEN", "TRUMP"))
+```
+
+Recently I began to think about the FiveThirtyEight's final 2020 Presidential model's pretty large errors compared to actual results in certain states. While by and large I believe the model performed well, I was interested in a possible relationship between a state's FiveThirtyEight elasticity score and how well the model performed in that state. (For those who need a refresher, see [here](https://fivethirtyeight.com/features/swing-voters-and-elastic-states/)). A lot of discussions have been had on the podcast, the site, and in every other political circle on the role swing states played in this election, but as we know from Nate, there is a difference between a state that is swingy because it's voters are swingy (i.e. elastic states) and states where the swing is determined by changes in turnout (these states could be inelastic).
+
+I decided in order to better explore this question I would take FiveThirtyEight's 2020 State Elasticity Scores, plot these against the difference in the final model's predicted margin and what results actually occurred, and run an uber-basic, Stats 101 simple linear regression to see if anything of interest arose. What I came up with is as follows:
+
+```{r plot-allstates, echo = FALSE, message = FALSE}
+state_data %>%
+  ggplot(mapping=aes(x=Elasticity_Score, y=FTE_Wiki_DIFF)) +
+  geom_point(aes(color=WINNER)) +
+  scale_color_manual(values=c("blue", "red")) +
+  geom_text(aes(label=State_Abv),vjust = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, linetype="dotted", color="gray40") +
+  geom_vline(xintercept=1,linetype="dashed", color = "gray40") +
+  labs(title = "538 Model - Election Results Margins vs 2020 State Elasticity Scores",
+       x= "2020 State Elasticity Score", y= "Margin Differences (538 Final Model - Wikipedia Results)")
+```
+
+What we see initially is a pretty scattered mess of states, elasticity scores, and margin differences. The vertical dashed lined marks an elasticity score of 1.0 (i.e. voters in states to the left are less elastic and states to the right are more elastic). On our y-axis, we have the "margin differences" (essentially the model's error) between FiveThirtyEight's final model and results from Wikipedia for Trump's margins, where the more negative a difference the greater the model underpredicted Trump's actual vote margin. The dotted line is our linear regression which showed elasticity scores as statistically insignificant for predicting the margin differences (with an R-squared of only 0.01137).
+
+I then decided to split the plot into Red and Blue states because why not, is this not how our politically polarized culture operates these days anyways?
+
+```{r plot-demstates, echo = FALSE, message = FALSE}
+state_data %>%
+  filter(WINNER=="BIDEN") %>%
+  ggplot(mapping=aes(x=Elasticity_Score, y=FTE_Wiki_DIFF)) +
+  geom_point(aes(color=WINNER)) +
+  scale_color_manual(values=c("blue")) +
+  geom_text(aes(label=State_Abv),vjust = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, linetype="dotted") +
+  geom_vline(xintercept=1,linetype="dashed", color = "gray40") +
+  labs(title = "538 Model - Election Results Margins vs 2020 State Elasticity Scores",subtitle = "Biden-Won States",
+       x= "2020 State Elasticity Score", y= "Margin Differences (538 Final Model - Wikipedia Results)")
+```
+
+For Biden-won states we see more of the same (aka not much), with no significant relationship and an R-squared of only 0.0152.
+
+```{r plot-repstates, echo = FALSE, message = FALSE}
+state_data %>%
+  filter(WINNER=="TRUMP") %>%
+  ggplot(mapping=aes(x=Elasticity_Score, y=FTE_Wiki_DIFF)) +
+  geom_point(aes(color=WINNER)) +
+  scale_color_manual(values=c("red")) +
+  geom_text(aes(label=State_Abv),vjust = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, linetype="dotted", color = "red") +
+  geom_vline(xintercept=1,linetype="dashed", color = "gray40") +
+  labs(title = "538 Model - Election Results Margins vs 2020 State Elasticity Scores",subtitle = "Trump-Won States",
+       x= "2020 State Elasticity Score", y= "Margin Differences (538 Final Model - Wikipedia Results)")
+```
+
+Looking now to the Trump-won states we see the slope of our trend increase a bit and now have a statistically significant relationship with an R-squared of 0.1633 (nothing too crazy, but I still think it's pretty cool). This plot would seem to indicate that, to at least some degree, the more elastic a Trump-won state's voters were, the more likely the model was to underestimate Trump's actual vote margin there.
