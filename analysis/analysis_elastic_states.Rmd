@@ -1,7 +1,10 @@
 ---
-title: "Analysis of FiveThirtyEight 2020 Presidential Model Error Correlations with State Elasticity Scores"
-author: Matthew Ralph
-output: html_document
+title: Analysis of FiveThirtyEight 2020 Presidential Model Error Correlations with
+  State Elasticity Scores
+author: "Matthew Ralph"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include = FALSE}
